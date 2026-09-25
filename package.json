@@ -1,0 +1,41 @@
+{
+  "name": "jev-testapp",
+  "version": "1.0.0",
+  "description": "Jev (TypeSafe System One model) の挙動を観察するための、単語のイメージ2択判定アプリ",
+  "scripts": {
+    "dev": "concurrently -k -n server,client -c blue,magenta \"tsx watch server/index.ts\" \"vite\"",
+    "build": "vite build",
+    "start": "tsx server/index.ts",
+    "typecheck": "tsc -p tsconfig.json && tsc -p client/tsconfig.json",
+    "test": "vitest run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MASAKIOKUDA-eng/jev-testapp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/MASAKIOKUDA-eng/jev-testapp/issues"
+  },
+  "homepage": "https://github.com/MASAKIOKUDA-eng/jev-testapp#readme",
+  "dependencies": {
+    "@typesafe-ai/sdk": "^0.6.0",
+    "express": "^5.2.1",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.2",
+    "concurrently": "^10.0.5",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.12"
+  }
+}

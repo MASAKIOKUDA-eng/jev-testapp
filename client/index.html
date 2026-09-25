@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jev イメージ判定ラボ</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div>
+        <h1>Jev イメージ判定ラボ</h1>
+        <p class="sub">ある単語から「A」と「B」のどちらをイメージするかを Jev に判定させ、その挙動を観察します。</p>
+      </div>
+      <span id="mode-badge" class="badge">…</span>
+    </header>
+
+    <main>
+      <section class="card setup">
+        <h2>比較する2つのイメージ</h2>
+        <div class="options">
+          <fieldset class="option option-a">
+            <legend>A</legend>
+            <input id="a-label" placeholder="例: 夏" value="夏" />
+            <input id="a-desc" placeholder="補足説明（任意）" />
+          </fieldset>
+          <span class="vs">vs</span>
+          <fieldset class="option option-b">
+            <legend>B</legend>
+            <input id="b-label" placeholder="例: 冬" value="冬" />
+            <input id="b-desc" placeholder="補足説明（任意）" />
+          </fieldset>
+        </div>
+        <label class="field">
+          <span>前提（任意）</span>
+          <input id="context" placeholder="例: 日本に住む一般的な大人の感覚で判断する" />
+        </label>
+        <div class="row">
+          <label class="field grow">
+            <span>モデル</span>
+            <input id="model" placeholder="jev-latest" list="model-list" />
+            <datalist id="model-list"></datalist>
+          </label>
+          <div class="field">
+            <span>同時に投げるプローブ</span>
+            <div class="checks">
+              <label><input type="checkbox" id="probe-swap" checked /> 並び順入替</label>
+              <label><input type="checkbox" id="probe-noul" checked /> noul</label>
+              <label><input type="checkbox" id="probe-score" checked /> score</label>
+            </div>
+          </div>
+        </div>
+        <div class="presets">
+          <span>プリセット:</span>
+          <div id="presets"></div>
+        </div>
+      </section>
+
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-tab="single" aria-selected="true">単語を判定</button>
+        <button role="tab" data-tab="batch" aria-selected="false">まとめて判定</button>
+        <button role="tab" data-tab="about" aria-selected="false">仕組み</button>
+      </nav>
+
+      <section id="tab-single" class="tab-panel">
+        <form id="single-form" class="card inline-form">
+          <input id="word" placeholder="単語を入力（例: 花火）" autocomplete="off" />
+          <button type="submit" class="primary">判定する</button>
+        </form>
+        <div id="single-result"></div>
+        <div id="history-wrap" class="card" hidden>
+          <div class="card-head">
+            <h2>この画面での履歴</h2>
+            <button id="history-clear" class="ghost">クリア</button>
+          </div>
+          <div id="history"></div>
+        </div>
+      </section>
+
+      <section id="tab-batch" class="tab-panel" hidden>
+        <form id="batch-form" class="card">
+          <label class="field">
+            <span>単語リスト（改行またはカンマ区切り、最大100語）</span>
+            <textarea id="words" rows="6"></textarea>
+          </label>
+          <div class="row end">
+            <span id="batch-count" class="muted"></span>
+            <button type="submit" class="primary">まとめて判定する</button>
+          </div>
+        </form>
+        <div id="batch-result"></div>
+      </section>
+
+      <section id="tab-about" class="tab-panel card prose" hidden>
+        <h2>このアプリがしていること</h2>
+        <p>
+          Jev（TypeSafe の System One モデル）は文章を生成せず、<b>noul</b>（Yes/No の確率）・<b>score</b>（順序付き評価）・<b>choice</b>（選択肢の分類）の
+          3種類の質問に、確率付きの構造化された答えだけを返します。
+        </p>
+        <p>1つの単語につき Jev に <b>1回だけ</b> リクエストし、同じ state（単語）に対して次の質問を並列に投げています。</p>
+        <table>
+          <thead><tr><th>質問名</th><th>種類</th><th>見ていること</th></tr></thead>
+          <tbody>
+            <tr><td><code>choice</code></td><td>choice</td><td>A と B のどちらをイメージするか（本命の判定）</td></tr>
+            <tr><td><code>choice_swapped</code></td><td>choice</td><td>選択肢を B, A の順に並べ替えても答えが変わらないか（位置バイアス）</td></tr>
+            <tr><td><code>noul_a</code> / <code>noul_b</code></td><td>noul</td><td>「A をイメージさせる」「B をイメージさせる」を別々に聞いたときの確率。両方高い・両方低いケースも見える</td></tr>
+            <tr><td><code>scale</code></td><td>score</td><td>「明らかに A」〜「明らかに B」の5段階でどこに位置するか</td></tr>
+          </tbody>
+        </table>
+        <p>
+          各質問の結果を「A 寄り度合い（0〜1）」に揃えて平均したものを総合判定にしています。
+          質問ごとの判定が食い違う場合は「ゆらぎあり」と表示されるので、Jev が迷っている単語を見つけられます。
+        </p>
+        <h3>観察のヒント</h3>
+        <ul>
+          <li>「並び順入替」の差（位置バイアス）が大きい単語は、Jev にとって判断が難しい単語です。</li>
+          <li>noul は A と B を独立に聞くので、「どちらもイメージしない」単語は両方とも低くなります。choice は必ずどちらかに振り分けるので差が出ます。</li>
+          <li>「前提」を変えると判定がどう動くかを試してみてください（例: 南半球の人の感覚で）。</li>
+          <li>補足説明を付けると、ラベルの解釈が固定されて判定が安定することがあります。</li>
+        </ul>
+        <p class="muted">
+          デモモード（API キー未設定時）はハッシュ値から作った疑似的な値を返します。Jev の本当の判定ではありません。
+        </p>
+      </section>
+    </main>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
